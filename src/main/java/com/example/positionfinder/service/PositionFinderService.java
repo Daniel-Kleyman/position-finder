@@ -29,7 +29,9 @@ public class PositionFinderService {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
         try {
-            loginToLinkedIn(driver, wait);
+            if (!isFeedPageOpen(driver, wait)) {
+                loginToLinkedIn(driver, wait);
+            }
             searchForJobs(driver, wait);
             clickSeeAllJobResults(driver, wait);
             filterByDatePosted(driver, wait);
@@ -44,7 +46,7 @@ public class PositionFinderService {
             writeToExcel(jobDetails);
 
         } finally {
-       //     driver.quit();
+            driver.quit();
         }
     }
 
@@ -57,6 +59,20 @@ public class PositionFinderService {
 
         // Initialize WebDriver with ChromeOptions
         return new ChromeDriver(options);
+    }
+
+    private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
+        try {
+            // Navigate to the LinkedIn feed page
+            driver.get("https://www.linkedin.com/feed/");
+
+            // Wait for an element that indicates the user is on the feed page
+            WebElement searchElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@aria-label='Search']")));
+            return searchElement.isDisplayed();
+        } catch (TimeoutException e) {
+            // If the element is not found, consider the feed page is not open
+            return false;
+        }
     }
 
     private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
@@ -86,17 +102,22 @@ public class PositionFinderService {
     }
 
     private void filterByDatePosted(WebDriver driver, WebDriverWait wait) {
-        // Wait for "Date posted" button and click it
-        WebElement datePostedButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(@aria-label, 'Date posted')]")));
-        datePostedButton.click();
+        try {
+            // Click the "Date posted" button to reveal filter options
+            WebElement datePostedButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@id='searchFilter_timePostedRange']")));
+            datePostedButton.click();
 
-        // Wait for "Past 24 hours" option in the dropdown and click it
-        WebElement past24HoursOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(), 'Past 24 hours')]")));
-        past24HoursOption.click();
+            // Wait for the "Past 24 hours" option and click it
+            WebElement past24HoursOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Past 24 hours']")));
+            past24HoursOption.click();
 
-        // Click "Show" button to apply the filter
-        WebElement showButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[starts-with(@aria-label, 'Show')]")));
-        showButton.click();
+            // Click the button with the class 'artdeco-button__text' and contains text 'Show'
+            WebElement showButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(@class, 'artdeco-button__text') and contains(text(), 'Show') and contains(text(), 'results')]")));
+            showButton.click();
+        } catch (TimeoutException e) {
+            System.err.println("TimeoutException: Element could not be found or interacted with.");
+            e.printStackTrace();
+        }
     }
 
     private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
