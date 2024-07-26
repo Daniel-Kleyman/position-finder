@@ -7,12 +7,13 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class PositionFinderService {
 
@@ -22,6 +23,7 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of("Java");
+    private static final String COOKIES_FILE_PATH = "cookies.json";
 
     public void getResults() {
         List<String[]> jobDetails = new ArrayList<>();
@@ -31,7 +33,10 @@ public class PositionFinderService {
         try {
             if (!isFeedPageOpen(driver, wait)) {
                 loginToLinkedIn(driver, wait);
+            } else {
+                driver.get("https://www.linkedin.com/feed/");
             }
+
             searchForJobs(driver, wait);
             clickSeeAllJobResults(driver, wait);
             filterByDatePosted(driver, wait);
@@ -46,31 +51,35 @@ public class PositionFinderService {
             writeToExcel(jobDetails);
 
         } finally {
-            driver.quit();
+            //  driver.quit();
         }
     }
 
     private WebDriver initializeWebDriver() {
         System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_PATH);
 
-        // Configure Chrome options to run in incognito mode
+        // Configure Chrome options
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--incognito");
+
+        // Set the path to your Chrome user data directory
+        String userDataDir = "C:\\Users\\Daniel\\AppData\\Local\\Google\\Chrome\\User Data";
+        options.addArguments("user-data-dir=" + userDataDir);
+
+        // Optionally specify the profile to use, e.g., 'Default'
+        options.addArguments("profile-directory=Default");
 
         // Initialize WebDriver with ChromeOptions
         return new ChromeDriver(options);
     }
 
+
     private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
         try {
-            // Navigate to the LinkedIn feed page
             driver.get("https://www.linkedin.com/feed/");
-
-            // Wait for an element that indicates the user is on the feed page
-            WebElement searchElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@aria-label='Search']")));
-            return searchElement.isDisplayed();
+            WebElement searchInputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//input[@class='search-global-typeahead__input' and @placeholder='Search']")));
+            return searchInputField.isDisplayed();
         } catch (TimeoutException e) {
-            // If the element is not found, consider the feed page is not open
             return false;
         }
     }
@@ -90,28 +99,23 @@ public class PositionFinderService {
     }
 
     private void searchForJobs(WebDriver driver, WebDriverWait wait) {
-        // Wait for the search field and enter the keyword
         WebElement searchBox = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@placeholder='Search']")));
         searchBox.sendKeys("Java" + Keys.RETURN);
     }
 
     private void clickSeeAllJobResults(WebDriver driver, WebDriverWait wait) {
-        // Wait for "See all job results in Israel" button and click it
         WebElement seeAllJobsButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(), 'See all job results in Israel')]")));
         seeAllJobsButton.click();
     }
 
     private void filterByDatePosted(WebDriver driver, WebDriverWait wait) {
         try {
-            // Click the "Date posted" button to reveal filter options
             WebElement datePostedButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@id='searchFilter_timePostedRange']")));
             datePostedButton.click();
 
-            // Wait for the "Past 24 hours" option and click it
             WebElement past24HoursOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Past 24 hours']")));
             past24HoursOption.click();
 
-            // Click the button with the class 'artdeco-button__text' and contains text 'Show'
             WebElement showButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(@class, 'artdeco-button__text') and contains(text(), 'Show') and contains(text(), 'results')]")));
             showButton.click();
         } catch (TimeoutException e) {
@@ -121,17 +125,14 @@ public class PositionFinderService {
     }
 
     private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
-        // Wait for job cards to be visible
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
 
         List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
         for (WebElement jobCard : jobCards) {
-            // Extract title and URL
             WebElement titleElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
             String title = titleElement.getText();
             String url = titleElement.getAttribute("href");
 
-            // Filter based on keywords
             for (String keyword : KEYWORDS) {
                 if (title.toLowerCase().contains(keyword.toLowerCase())) {
                     jobDetails.add(new String[]{title, url});
@@ -155,16 +156,13 @@ public class PositionFinderService {
     }
 
     private void writeToExcel(List<String[]> jobDetails) {
-        // Create a Workbook and a Sheet
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Positions");
 
-        // Create header row
         Row headerRow = sheet.createRow(0);
         headerRow.createCell(0).setCellValue("Job Title");
         headerRow.createCell(1).setCellValue("Job URL");
 
-        // Write job details
         int rowIndex = 1;
         for (String[] jobDetail : jobDetails) {
             Row row = sheet.createRow(rowIndex++);
@@ -172,7 +170,6 @@ public class PositionFinderService {
             row.createCell(1).setCellValue(jobDetail[1]);
         }
 
-        // Write the Workbook to a file
         try (FileOutputStream fileOut = new FileOutputStream("C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx")) {
             workbook.write(fileOut);
         } catch (IOException e) {
