@@ -32,7 +32,7 @@ public class PositionFinderService {
             loginToLinkedIn(driver, wait);
             searchForJobs(driver, wait);
             clickSeeAllJobResults(driver, wait);
-            applyFilters(driver, wait);
+            filterByDatePosted(driver, wait);
 
             // Extract job details
             do {
@@ -44,7 +44,7 @@ public class PositionFinderService {
             writeToExcel(jobDetails);
 
         } finally {
-            driver.quit();
+       //     driver.quit();
         }
     }
 
@@ -85,28 +85,30 @@ public class PositionFinderService {
         seeAllJobsButton.click();
     }
 
-    private void applyFilters(WebDriver driver, WebDriverWait wait) {
-        // Wait for the "All filters" button and click it
-        WebElement allFiltersButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@aria-label='All filters']")));
-        allFiltersButton.click();
+    private void filterByDatePosted(WebDriver driver, WebDriverWait wait) {
+        // Wait for "Date posted" button and click it
+        WebElement datePostedButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(@aria-label, 'Date posted')]")));
+        datePostedButton.click();
 
-        // Select "Past 24 hours" filter
-        WebElement past24HoursCheckbox = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@name='f_TPR'][@value='r86400']")));
-        past24HoursCheckbox.click();
+        // Wait for "Past 24 hours" option in the dropdown and click it
+        WebElement past24HoursOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(), 'Past 24 hours')]")));
+        past24HoursOption.click();
 
-        // Click "Show results" button
-        WebElement showResultsButton = driver.findElement(By.xpath("//button[contains(text(), 'Show results')]"));
-        showResultsButton.click();
+        // Click "Show" button to apply the filter
+        WebElement showButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[starts-with(@aria-label, 'Show')]")));
+        showButton.click();
     }
 
     private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
         // Wait for job cards to be visible
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'job-card-container')]")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
 
-        List<WebElement> jobCards = driver.findElements(By.xpath("//div[contains(@class, 'job-card-container')]"));
+        List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
         for (WebElement jobCard : jobCards) {
-            String title = jobCard.findElement(By.xpath(".//h3[contains(@class, 'job-card-list__title')]")).getText();
-            String url = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]")).getAttribute("href");
+            // Extract title and URL
+            WebElement titleElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
+            String title = titleElement.getText();
+            String url = titleElement.getAttribute("href");
 
             // Filter based on keywords
             for (String keyword : KEYWORDS) {
@@ -124,7 +126,7 @@ public class PositionFinderService {
             WebElement nextButton = nextButtons.get(0);
             if (nextButton.isDisplayed()) {
                 nextButton.click();
-                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'job-card-container')]")));
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
                 return true;
             }
         }
