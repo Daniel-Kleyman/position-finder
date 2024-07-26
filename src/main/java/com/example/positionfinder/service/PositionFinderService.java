@@ -7,23 +7,19 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.*;
 
 public class PositionFinderService {
 
-    // Access environment variables
     private static final String CHROME_DRIVER_PATH = System.getenv("CHROME_DRIVER_PATH");
     private static final String L_LOGIN_URL = System.getenv("L_LOGIN_URL");
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of("Java");
-    private static final String COOKIES_FILE_PATH = "cookies.json";
+    private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER";
 
     public void getResults() {
         List<String[]> jobDetails = new ArrayList<>();
@@ -33,45 +29,51 @@ public class PositionFinderService {
         try {
             if (!isFeedPageOpen(driver, wait)) {
                 loginToLinkedIn(driver, wait);
-            } else {
-                driver.get("https://www.linkedin.com/feed/");
             }
 
-            searchForJobs(driver, wait);
-            clickSeeAllJobResults(driver, wait);
-            filterByDatePosted(driver, wait);
+            int start = 0;
+            boolean morePages = true;
 
-            // Extract job details
-            do {
+            while (morePages) {
+                // Fetch the page with the current start parameter
+                filterByDatePosted(driver, start);
+
+                // Extract job details from the current page
                 extractJobDetails(driver, wait, jobDetails);
-                // Click "Next" button if available
-            } while (clickNextButton(driver, wait));
+
+                // Check if the "No matching jobs found" message is present
+                morePages = !isNoJobsFound(driver);
+
+                // Increment start parameter for the next page
+                start += 25;
+            }
 
             // Write job details to Excel
             writeToExcel(jobDetails);
 
         } finally {
-            //  driver.quit();
+      //      driver.quit();
         }
+    }
+
+    private void filterByDatePosted(WebDriver driver, int start) {
+        String url = firstUrl;
+        if(start > 0){
+            url = String.format("https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER&start=%d", start);
+        }
+        driver.get(url);
     }
 
     private WebDriver initializeWebDriver() {
         System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_PATH);
 
-        // Configure Chrome options
         ChromeOptions options = new ChromeOptions();
-
-        // Set the path to your Chrome user data directory
         String userDataDir = "C:\\Users\\Daniel\\AppData\\Local\\Google\\Chrome\\User Data";
         options.addArguments("user-data-dir=" + userDataDir);
-
-        // Optionally specify the profile to use, e.g., 'Default'
         options.addArguments("profile-directory=Default");
 
-        // Initialize WebDriver with ChromeOptions
         return new ChromeDriver(options);
     }
-
 
     private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
         try {
@@ -87,41 +89,13 @@ public class PositionFinderService {
     private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
         driver.get(L_LOGIN_URL);
 
-        // Enter email and password
         WebElement emailField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@id='username']")));
         emailField.sendKeys(USERNAME);
         WebElement passwordField = driver.findElement(By.xpath("//input[@id='password']"));
         passwordField.sendKeys(PASSWORD);
 
-        // Click "Sign in" button
         WebElement signInButton = driver.findElement(By.xpath("//button[@type='submit']"));
         signInButton.click();
-    }
-
-    private void searchForJobs(WebDriver driver, WebDriverWait wait) {
-        WebElement searchBox = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@placeholder='Search']")));
-        searchBox.sendKeys("Java" + Keys.RETURN);
-    }
-
-    private void clickSeeAllJobResults(WebDriver driver, WebDriverWait wait) {
-        WebElement seeAllJobsButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(), 'See all job results in Israel')]")));
-        seeAllJobsButton.click();
-    }
-
-    private void filterByDatePosted(WebDriver driver, WebDriverWait wait) {
-        try {
-            WebElement datePostedButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@id='searchFilter_timePostedRange']")));
-            datePostedButton.click();
-
-            WebElement past24HoursOption = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Past 24 hours']")));
-            past24HoursOption.click();
-
-            WebElement showButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(@class, 'artdeco-button__text') and contains(text(), 'Show') and contains(text(), 'results')]")));
-            showButton.click();
-        } catch (TimeoutException e) {
-            System.err.println("TimeoutException: Element could not be found or interacted with.");
-            e.printStackTrace();
-        }
     }
 
     private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
@@ -142,17 +116,9 @@ public class PositionFinderService {
         }
     }
 
-    private boolean clickNextButton(WebDriver driver, WebDriverWait wait) {
-        List<WebElement> nextButtons = driver.findElements(By.xpath("//button[contains(@aria-label, 'Next')]"));
-        if (nextButtons.size() > 0) {
-            WebElement nextButton = nextButtons.get(0);
-            if (nextButton.isDisplayed()) {
-                nextButton.click();
-                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
-                return true;
-            }
-        }
-        return false;
+    private boolean isNoJobsFound(WebDriver driver) {
+        List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
+        return !noJobsElements.isEmpty();
     }
 
     private void writeToExcel(List<String[]> jobDetails) {
