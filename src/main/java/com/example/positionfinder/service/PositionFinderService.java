@@ -43,17 +43,17 @@ public class PositionFinderService {
                 extractJobDetails(driver, wait, jobDetails);
 
                 // Check if the "No matching jobs found" message is present
-                morePages = isNoJobsFound(driver);
+                morePages = !isNoJobsFound(driver);
 
                 // Increment start parameter for the next page
                 start += 25;
             }
-
+            System.out.println(jobDetails.size());
             // Write job details to Excel
             writeToExcel(jobDetails);
 
         } finally {
- //           driver.quit();
+            //           driver.quit();
         }
     }
 
@@ -145,9 +145,10 @@ public class PositionFinderService {
 
 
     private boolean isNoJobsFound(WebDriver driver) {
-     //   List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
-        List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
-        return noJobsElements.isEmpty();
+        //   List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
+      //  List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
+        List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
+        return jobCards.isEmpty();
     }
 
     private void writeToExcel(List<String[]> jobDetails) {
