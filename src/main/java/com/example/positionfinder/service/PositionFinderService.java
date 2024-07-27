@@ -1,5 +1,6 @@
 package com.example.positionfinder.service;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.*;
@@ -25,7 +26,7 @@ public class PositionFinderService {
     public void getResults() {
         List<String[]> jobDetails = new ArrayList<>();
         WebDriver driver = initializeWebDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         try {
             if (!isFeedPageOpen(driver, wait)) {
@@ -38,7 +39,8 @@ public class PositionFinderService {
             while (morePages) {
                 // Fetch the page with the current start parameter
                 filterByDatePosted(driver, start);
-
+// Scroll down to load more job cards
+                scrollToLoadMore(driver, wait);
                 // Extract job details from the current page
                 extractJobDetails(driver, wait, jobDetails);
 
@@ -48,18 +50,56 @@ public class PositionFinderService {
                 // Increment start parameter for the next page
                 start += 25;
             }
-            System.out.println(jobDetails.size());
+            System.out.println("jobs parsed " + jobDetails.size());
             // Write job details to Excel
             writeToExcel(jobDetails);
 
         } finally {
-            //           driver.quit();
+            driver.quit();
+        }
+    }
+
+    private void scrollToLoadMore(WebDriver driver, WebDriverWait wait) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+
+        // Locate the scrollable container using the provided XPath
+        WebElement scrollableContainer = driver.findElement(By.xpath("//*[@id='main']/div/div[2]/div[1]/div"));
+
+        // Get the current scroll height of the container
+        long previousHeight = (Long) js.executeScript("return arguments[0].scrollHeight;", scrollableContainer);
+
+        while (true) {
+            // Scroll down within the container
+            js.executeScript("arguments[0].scrollTop = arguments[0].scrollHeight;", scrollableContainer);
+
+            // Wait for new content to load
+            try {
+                Thread.sleep(3000); // Wait for 3 seconds, adjust as needed
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            // Calculate the new scroll height and compare with the previous height
+            long newHeight = (Long) js.executeScript("return arguments[0].scrollHeight;", scrollableContainer);
+            if (newHeight == previousHeight) {
+                // Break the loop if the height hasn't changed (no more content to load)
+                break;
+            }
+            previousHeight = newHeight;
+
+            // Optionally, you can add a WebDriverWait to ensure that new elements are loaded
+            try {
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
+            } catch (TimeoutException e) {
+                System.out.println("Timeout while waiting for new job elements to load.");
+                break;
+            }
         }
     }
 
     private void filterByDatePosted(WebDriver driver, int start) {
         String url = firstUrl;
-        if(start > 0){
+        if (start > 0) {
             url = String.format("https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER&start=%d", start);
         }
         driver.get(url);
@@ -122,15 +162,15 @@ public class PositionFinderService {
                     // Extract job URL
                     WebElement urlElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
                     String url = urlElement.getAttribute("href");
-
+                    jobDetails.add(new String[]{title, url});
                     // Check if the job title contains any of the keywords
-                    for (String keyword : KEYWORDS) {
-                        if (title.toLowerCase().contains(keyword.toLowerCase())) {
-                            // Add job details to the list if the keyword is found
-                            jobDetails.add(new String[]{title, url});
-                            break; // Exit the loop after finding a match
-                        }
-                    }
+                    // for (String keyword : KEYWORDS) {
+                    //     if (title.toLowerCase().contains(keyword.toLowerCase())) {
+                    //         // Add job details to the list if the keyword is found
+                    //         jobDetails.add(new String[]{title, url});
+                    //         break; // Exit the loop after finding a match
+                    //     }
+                    // }
                 } catch (NoSuchElementException e) {
                     // Handle cases where expected elements are not found
                     System.out.println("Element not found within job card.");
@@ -138,15 +178,13 @@ public class PositionFinderService {
             }
         } catch (TimeoutException e) {
             // Handle timeout if the element is not found within the timeout period
-            System.out.println("Timeout while waiting for job details.");
-            e.printStackTrace();
+            System.out.println("Timeout while waiting for job details: " + e.getMessage());
         }
     }
 
-
     private boolean isNoJobsFound(WebDriver driver) {
         //   List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
-      //  List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
+        //  List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
         List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
         return jobCards.isEmpty();
     }
