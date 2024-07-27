@@ -21,12 +21,11 @@ public class PositionFinderService {
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
     private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER";
-    boolean morePages = true;
 
     public void getResults() {
-        Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
+        List<String[]> jobDetails = new ArrayList<>();
         WebDriver driver = initializeWebDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
         try {
             if (!isFeedPageOpen(driver, wait)) {
@@ -34,69 +33,33 @@ public class PositionFinderService {
             }
 
             int start = 0;
+            boolean morePages = true;
 
             while (morePages) {
                 // Fetch the page with the current start parameter
                 filterByDatePosted(driver, start);
-                // Scroll down to load more job cards
-                scrollToLoadMore(driver, wait);
+
                 // Extract job details from the current page
                 extractJobDetails(driver, wait, jobDetails);
-                System.out.println("jobs found " + jobDetails.size());
+
                 // Check if the "No matching jobs found" message is present
                 morePages = !isNoJobsFound(driver);
 
                 // Increment start parameter for the next page
                 start += 25;
             }
-            System.out.println("jobs parsed " + jobDetails.size());
+            System.out.println(jobDetails.size());
             // Write job details to Excel
             writeToExcel(jobDetails);
 
         } finally {
-            driver.quit();
+            //           driver.quit();
         }
     }
-
-    private void scrollToLoadMore(WebDriver driver, WebDriverWait wait) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-        // Locate the scrollable container using the provided XPath
-        WebElement scrollableContainer = driver.findElement(By.xpath("//*[@id='main']/div/div[2]/div[1]/div"));
-
-        // Define the step size for scrolling
-        int stepSize = 300; // Adjust this value based on your needs
-        long previousHeight = (Long) js.executeScript("return arguments[0].scrollHeight;", scrollableContainer);
-        boolean moreContentToLoad = true;
-
-        while (moreContentToLoad) {
-            // Scroll down incrementally
-            for (int i = 0; i < 3; i++) { // Number of intermediate stops
-                js.executeScript("arguments[0].scrollTop += arguments[1];", scrollableContainer, stepSize);
-
-                // Wait for new content to load
-                try {
-                    Thread.sleep(2000); // Wait for 2 seconds between scrolls
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                // Check if the page height has increased (indicating new content has loaded)
-                long newHeight = (Long) js.executeScript("return arguments[0].scrollHeight;", scrollableContainer);
-                if (newHeight == previousHeight) {
-                    // If the height hasn't changed, there may be no more new content
-                    moreContentToLoad = false;
-                    break;
-                }
-                previousHeight = newHeight;
-            }
-        }
-    }
-
 
     private void filterByDatePosted(WebDriver driver, int start) {
         String url = firstUrl;
-        if (start > 0) {
+        if(start > 0){
             url = String.format("https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER&start=%d", start);
         }
         driver.get(url);
@@ -136,16 +99,16 @@ public class PositionFinderService {
         signInButton.click();
     }
 
-    private void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
+    private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
         try {
-            // Wait until the job container is visible
+            // Wait until the job container or an element within it is visible
             WebElement jobContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'jobs-search-results')]")));
 
             // Find all job cards on the page
             List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
             if (jobCards.isEmpty()) {
-                // Log if no job cards are found
-                System.err.println("No job cards found.");
+                // Handle the case where no job cards are found
+                System.out.println("No job cards found.");
                 return;
             }
 
@@ -153,62 +116,54 @@ public class PositionFinderService {
             for (WebElement jobCard : jobCards) {
                 try {
                     // Extract job title
-                    WebElement titleElement;
-                    try {
-                        titleElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job title element not found in a job card.");
-                        continue; // Skip this job card if the title is missing
-                    }
+                    WebElement titleElement = jobCard.findElement(By.xpath(".//strong"));
                     String title = titleElement.getText();
 
                     // Extract job URL
-                    WebElement urlElement;
-                    try {
-                        urlElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job URL element not found in a job card.");
-                        continue; // Skip this job card if the URL is missing
-                    }
+                    WebElement urlElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
                     String url = urlElement.getAttribute("href");
 
-                    // Only add job details if the URL is not already in the map
-                    jobDetails.putIfAbsent(url, title);
+                    // Check if the job title contains any of the keywords
+                    for (String keyword : KEYWORDS) {
+                        if (title.toLowerCase().contains(keyword.toLowerCase())) {
+                            // Add job details to the list if the keyword is found
+                            jobDetails.add(new String[]{title, url});
+                            break; // Exit the loop after finding a match
+                        }
+                    }
                 } catch (NoSuchElementException e) {
-                    // Log error if elements are not found within a job card
-                    System.err.println("Error extracting details from job card: " + e.getMessage());
+                    // Handle cases where expected elements are not found
+                    System.out.println("Element not found within job card.");
                 }
             }
         } catch (TimeoutException e) {
-            // Log error if the job container element is not found within the timeout period
-            System.err.println("Timeout while waiting for job container: " + e.getMessage());
-        } catch (Exception e) {
-            // Log any other unexpected errors
-            System.err.println("Unexpected error: " + e.getMessage());
+            // Handle timeout if the element is not found within the timeout period
+            System.out.println("Timeout while waiting for job details.");
+            e.printStackTrace();
         }
     }
 
 
     private boolean isNoJobsFound(WebDriver driver) {
+        //   List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
+      //  List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
         List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
         return jobCards.isEmpty();
     }
 
-    private void writeToExcel(Map<String, String> jobDetails) {
+    private void writeToExcel(List<String[]> jobDetails) {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Positions");
 
         Row headerRow = sheet.createRow(0);
         headerRow.createCell(0).setCellValue("Job Title");
-        headerRow.createCell(1).setCellValue(""); // Blank column
-        headerRow.createCell(2).setCellValue("Job URL");
+        headerRow.createCell(1).setCellValue("Job URL");
 
         int rowIndex = 1;
-        for (Map.Entry<String, String> entry : jobDetails.entrySet()) {
+        for (String[] jobDetail : jobDetails) {
             Row row = sheet.createRow(rowIndex++);
-            row.createCell(0).setCellValue(entry.getValue()); // Job Title
-            row.createCell(1).setCellValue(""); // Blank cell
-            row.createCell(2).setCellValue(entry.getKey()); // Job URL
+            row.createCell(0).setCellValue(jobDetail[0]);
+            row.createCell(1).setCellValue(jobDetail[1]);
         }
 
         try (FileOutputStream fileOut = new FileOutputStream("C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx")) {
