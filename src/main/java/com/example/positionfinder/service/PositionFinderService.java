@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.*;
 import java.time.Duration;
 import java.util.*;
+import java.util.NoSuchElementException;
 
 public class PositionFinderService {
 
@@ -18,13 +19,13 @@ public class PositionFinderService {
     private static final String L_LOGIN_URL = System.getenv("L_LOGIN_URL");
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
-    private static final List<String> KEYWORDS = List.of("Java");
+    private static final List<String> KEYWORDS = List.of(" ");
     private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER";
 
     public void getResults() {
         List<String[]> jobDetails = new ArrayList<>();
         WebDriver driver = initializeWebDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
         try {
             if (!isFeedPageOpen(driver, wait)) {
@@ -42,7 +43,7 @@ public class PositionFinderService {
                 extractJobDetails(driver, wait, jobDetails);
 
                 // Check if the "No matching jobs found" message is present
-                morePages = !isNoJobsFound(driver);
+                morePages = isNoJobsFound(driver);
 
                 // Increment start parameter for the next page
                 start += 25;
@@ -52,7 +53,7 @@ public class PositionFinderService {
             writeToExcel(jobDetails);
 
         } finally {
-      //      driver.quit();
+ //           driver.quit();
         }
     }
 
@@ -99,26 +100,54 @@ public class PositionFinderService {
     }
 
     private void extractJobDetails(WebDriver driver, WebDriverWait wait, List<String[]> jobDetails) {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@data-job-id]")));
+        try {
+            // Wait until the job container or an element within it is visible
+            WebElement jobContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'jobs-search-results')]")));
 
-        List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
-        for (WebElement jobCard : jobCards) {
-            WebElement titleElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
-            String title = titleElement.getText();
-            String url = titleElement.getAttribute("href");
+            // Find all job cards on the page
+            List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
+            if (jobCards.isEmpty()) {
+                // Handle the case where no job cards are found
+                System.out.println("No job cards found.");
+                return;
+            }
 
-            for (String keyword : KEYWORDS) {
-                if (title.toLowerCase().contains(keyword.toLowerCase())) {
-                    jobDetails.add(new String[]{title, url});
-                    break;
+            // Loop through each job card
+            for (WebElement jobCard : jobCards) {
+                try {
+                    // Extract job title
+                    WebElement titleElement = jobCard.findElement(By.xpath(".//strong"));
+                    String title = titleElement.getText();
+
+                    // Extract job URL
+                    WebElement urlElement = jobCard.findElement(By.xpath(".//a[contains(@class, 'job-card-list__title')]"));
+                    String url = urlElement.getAttribute("href");
+
+                    // Check if the job title contains any of the keywords
+                    for (String keyword : KEYWORDS) {
+                        if (title.toLowerCase().contains(keyword.toLowerCase())) {
+                            // Add job details to the list if the keyword is found
+                            jobDetails.add(new String[]{title, url});
+                            break; // Exit the loop after finding a match
+                        }
+                    }
+                } catch (NoSuchElementException e) {
+                    // Handle cases where expected elements are not found
+                    System.out.println("Element not found within job card.");
                 }
             }
+        } catch (TimeoutException e) {
+            // Handle timeout if the element is not found within the timeout period
+            System.out.println("Timeout while waiting for job details.");
+            e.printStackTrace();
         }
     }
 
+
     private boolean isNoJobsFound(WebDriver driver) {
-        List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
-        return !noJobsElements.isEmpty();
+     //   List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[@class='t-24 t-black t-normal text-align-center' and contains(text(), 'No matching jobs found.')]"));
+        List<WebElement> noJobsElements = driver.findElements(By.xpath("//h1[contains(text(), 'No matching jobs found.')]"));
+        return noJobsElements.isEmpty();
     }
 
     private void writeToExcel(List<String[]> jobDetails) {
