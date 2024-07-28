@@ -174,6 +174,12 @@ public class TestMap {
         jobTitles.put("Technical Account Manager with verification", "1");
         jobTitles.put("Software Engineer - Cloud Security", "1");
         jobTitles.put("Software Engineer - Cloud Security with verification", "1");
+
+        String url = "https://www.linkedin.com/jobs/search/?alertAction=viewjobs&currentJobId=3954748434&distance=50&f_TPR=r604800&geoId=102981967&keywords=full%20stack%20engineer&origin=JOB_SEARCH_PAGE_JOB_FILTER&sortBy=R";
+        for (String key : jobTitles.keySet()) {
+            jobTitles.put(key, url);
+        }
+
         return jobTitles;
     }
 }
