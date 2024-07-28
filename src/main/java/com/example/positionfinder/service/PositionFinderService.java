@@ -22,16 +22,17 @@ public class PositionFinderService {
     private static final List<String> KEYWORDS = List.of(" ");
     private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER";
     boolean morePages = true;
+    Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
 
     public void getResults() {
-        Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
+
         WebDriver driver = initializeWebDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         try {
-            if (!isFeedPageOpen(driver, wait)) {
-                loginToLinkedIn(driver, wait);
-            }
+//            if (!isFeedPageOpen(driver, wait)) {
+//                loginToLinkedIn(driver, wait);
+//            }
 
             int start = 0;
 
@@ -112,16 +113,16 @@ public class PositionFinderService {
         return new ChromeDriver(options);
     }
 
-    private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
-        try {
-            driver.get("https://www.linkedin.com/feed/");
-            WebElement searchInputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//input[@class='search-global-typeahead__input' and @placeholder='Search']")));
-            return searchInputField.isDisplayed();
-        } catch (TimeoutException e) {
-            return false;
-        }
-    }
+//    private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
+//        try {
+//            driver.get("https://www.linkedin.com/feed/");
+//            WebElement searchInputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+//                    By.xpath("//input[@class='search-global-typeahead__input' and @placeholder='Search']")));
+//            return searchInputField.isDisplayed();
+//        } catch (TimeoutException e) {
+//            return false;
+//        }
+//    }
 
     private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
         driver.get(L_LOGIN_URL);
