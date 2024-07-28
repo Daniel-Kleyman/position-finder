@@ -20,7 +20,7 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java%2Bmicroservices&origin=JOB_SEARCH_PAGE_JOB_FILTER";
+    private String firstUrl = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=&origin=JOB_SEARCH_PAGE_JOB_FILTER";
     boolean morePages = true;
     Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
 
@@ -52,7 +52,7 @@ public class PositionFinderService {
             }
             System.out.println("jobs parsed " + jobDetails.size());
             // Write job details to Excel
-            writeToExcel(jobDetails);
+            WriteToExcel.writeToExcel(jobDetails);
 
         } finally {
             driver.quit();
@@ -77,7 +77,7 @@ public class PositionFinderService {
 
                 // Wait for new content to load
                 try {
-                    Thread.sleep(1000); // Wait for 2 seconds between scrolls
+                    Thread.sleep(2000); // Wait for 2 seconds between scrolls
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -97,7 +97,7 @@ public class PositionFinderService {
     private void filterByDatePosted(WebDriver driver, int start) {
         String url = firstUrl;
         if (start > 0) {
-            url = String.format("https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=java&origin=JOB_SEARCH_PAGE_JOB_FILTER&start=%d", start);
+            url = String.format("https://www.linkedin.com/jobs/search/?f_TPR=r86400&keywords=&origin=JOB_SEARCH_PAGE_JOB_FILTER&start=%d", start);
         }
         driver.get(url);
     }
@@ -191,35 +191,5 @@ public class PositionFinderService {
     private boolean isNoJobsFound(WebDriver driver) {
         List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
         return jobCards.isEmpty();
-    }
-
-    private void writeToExcel(Map<String, String> jobDetails) {
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Positions");
-
-        Row headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("Job Title");
-        headerRow.createCell(1).setCellValue(""); // Blank column
-        headerRow.createCell(2).setCellValue("Job URL");
-
-        int rowIndex = 1;
-        for (Map.Entry<String, String> entry : jobDetails.entrySet()) {
-            Row row = sheet.createRow(rowIndex++);
-            row.createCell(0).setCellValue(entry.getValue()); // Job Title
-            row.createCell(1).setCellValue(""); // Blank cell
-            row.createCell(2).setCellValue(entry.getKey()); // Job URL
-        }
-
-        try (FileOutputStream fileOut = new FileOutputStream("C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx")) {
-            workbook.write(fileOut);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                workbook.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
