@@ -22,10 +22,12 @@ import java.util.stream.Collectors;
 
 public class WriteToExcel {
     public static void writeToExcel(Map<String, String> jobDetails) {
+        saveFilteredMapToExcel(jobDetails);
+        saveUnfilteredMapToExcel(jobDetails);
         String filePath = "C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx";
         Workbook workbook;
         Sheet sheet;
-        saveUnfilteredMapToExcel(jobDetails);
+
         Map<String, String> filteredTestMap = filterMap(jobDetails);
         // Check if the file exists
         if (Files.exists(Paths.get(filePath))) {
@@ -81,6 +83,73 @@ public class WriteToExcel {
 
         // Write changes to the file
         try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            workbook.write(fileOut);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void saveFilteredMapToExcel(Map<String, String> jDetails)
+    {
+        Map<String, String> jobDetails = filterMap(jDetails);
+        String filePath = "C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx";
+        Workbook workbook;
+        Sheet sheet;
+
+        Map<String, String> filteredTestMap = filterMap(jobDetails);
+        // Check if the file exists
+        if (Files.exists(Paths.get(filePath))) {
+            // File exists, so read it
+            try (FileInputStream fis = new FileInputStream(filePath)) {
+                workbook = new XSSFWorkbook(fis);
+                sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
+            } catch (IOException e) {
+                e.printStackTrace();
+                return; // Exit if there's an error reading the existing file
+            }
+        } else {
+            // File does not exist, so create a new one
+            workbook = new XSSFWorkbook();
+            sheet = workbook.createSheet("Positions");
+
+            Row headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue(""); // Blank column
+            headerRow.createCell(1).setCellValue("Date");
+            headerRow.createCell(2).setCellValue("Source");
+            headerRow.createCell(3).setCellValue("Position");
+            headerRow.createCell(4).setCellValue("Company");
+            headerRow.createCell(5).setCellValue("Location");
+            headerRow.createCell(6).setCellValue("Link");
+            // Set column widths
+            sheet.setColumnWidth(0, 1000);
+            sheet.setColumnWidth(3, 10000); // Index 3 is the 4th column (Position)
+            sheet.setColumnWidth(6, 10000);
+
+            int rowIndex = 1;
+            for (Map.Entry<String, String> entry : jobDetails.entrySet()) {
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(""); // Blank column
+                row.createCell(1).setCellValue(getCurrentDate());
+                row.createCell(2).setCellValue("Linkedin");
+                row.createCell(3).setCellValue(entry.getValue()); // Position
+                row.createCell(4).setCellValue(""); // Company
+                row.createCell(5).setCellValue(""); // Location
+                // Create hyperlink for the URL from entry.getValue()
+                Cell linkCell = row.createCell(6);
+                String url = entry.getValue();
+                Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
+                hyperlink.setAddress(url);
+                linkCell.setHyperlink(hyperlink);
+                linkCell.setCellValue(url);
+            }
+        }
+        try (FileOutputStream fileOut = new FileOutputStream("C:\\Users\\Daniel\\Desktop\\CV\\PositionsUnfiltered.xlsx")) {
             workbook.write(fileOut);
         } catch (IOException e) {
             e.printStackTrace();
