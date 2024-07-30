@@ -33,20 +33,23 @@ public class PositionFinderService {
 
 
     public void getResults() {
+        Scrolling scroller = new Scrolling(driver, wait);
 
         try {
-//            if (!isFeedPageOpen(driver, wait)) {
-//                loginToLinkedIn(driver, wait);
-//            }
             openPage(driver);
-            // Scroll down to load more job cards
-            Scrolling.scrollToLoadMore(driver, wait);
+            // Start scrolling in a separate thread
+           scroller.start();
+           Thread.sleep(250000);
+           scroller.stop(); // Signal the scrolling thread to stop
+            System.out.println("scrolling stoped");
             // Extract job details from the current page
-            //           ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
+            ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
             System.out.println("jobs found " + jobDetails.size());
             // Write job details to Excel
             WriteToExcel.writeToExcel(jobDetails);
             System.out.println("jobs parsed " + jobDetails.size());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
             //     driver.quit();
         }

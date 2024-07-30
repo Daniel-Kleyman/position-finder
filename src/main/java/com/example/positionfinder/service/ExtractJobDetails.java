@@ -13,13 +13,12 @@ import java.util.NoSuchElementException;
 
 public class ExtractJobDetails {
     public static void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
-//        while (jobDetails.size() < 57) {
-//            extractProcess(driver, wait, jobDetails);
-//        }
-//        extractProcess(driver, wait, jobDetails);
+
+           extractProcess(driver, wait, jobDetails);
+
     }
 
-    private void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
+    private static void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
         // Wait for a given period to allow the page to load
         System.out.println("Waiting for page to load...");
         try {
