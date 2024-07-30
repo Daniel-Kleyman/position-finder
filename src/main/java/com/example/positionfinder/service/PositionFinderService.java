@@ -23,8 +23,14 @@ public class PositionFinderService {
     private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=Java&location=Israel&geoId=101620260&f_TPR=r86400&position=1&pageNum=0";
     boolean morePages = true;
     Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
-    WebDriver driver = initializeWebDriver();
-    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    WebDriver driver;
+    WebDriverWait wait;
+
+    public PositionFinderService() {
+        this.driver = initializeWebDriver();
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
 
     public void getResults() {
 
@@ -36,7 +42,7 @@ public class PositionFinderService {
             // Scroll down to load more job cards
             Scrolling.scrollToLoadMore(driver, wait);
             // Extract job details from the current page
-        //    extractJobDetails(driver, wait, jobDetails);
+            //           ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
             System.out.println("jobs found " + jobDetails.size());
             // Write job details to Excel
             WriteToExcel.writeToExcel(jobDetails);
@@ -87,20 +93,12 @@ public class PositionFinderService {
 //        String userDataDir = "C:\\Users\\Daniel\\AppData\\Local\\Google\\Chrome\\User Data";
 //        options.addArguments("user-data-dir=" + userDataDir);
 //        options.addArguments("profile-directory=Default");
+        WebDriver driver = new ChromeDriver(options);
+        driver.manage().window().maximize(); // Maximize the browser window
 
-        return new ChromeDriver(options);
+        return driver;
     }
 
-//    private boolean isFeedPageOpen(WebDriver driver, WebDriverWait wait) {
-//        try {
-//            driver.get("https://www.linkedin.com/feed/");
-//            WebElement searchInputField = wait.until(ExpectedConditions.visibilityOfElementLocated(
-//                    By.xpath("//input[@class='search-global-typeahead__input' and @placeholder='Search']")));
-//            return searchInputField.isDisplayed();
-//        } catch (TimeoutException e) {
-//            return false;
-//        }
-//    }
 
 //    private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
 //        driver.get(L_LOGIN_URL);
@@ -114,77 +112,5 @@ public class PositionFinderService {
 //        signInButton.click();
 //    }
 
-    private void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
-//        while (jobDetails.size() < 57) {
-//            extractProcess(driver, wait, jobDetails);
-//        }
-//        extractProcess(driver, wait, jobDetails);
-    }
 
-    private void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
-        // Wait for a given period to allow the page to load
-        System.out.println("Waiting for page to load...");
-        try {
-            Thread.sleep(10000); // Convert seconds to milliseconds
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            // Wait until the job container is visible /html/body/div[1]/div/main/section[2]
-            WebElement jobContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//ul[contains(@class, 'jobs-search__results-list')]")));
-            System.out.println("container is found");
-            //   Find all job cards on the page
-            List<WebElement> jobCards = driver.findElements(By.xpath("//div[contains(@class, 'job-search-card')]"));
-            if (jobCards.isEmpty()) {
-                // Log if no job cards are found
-                System.err.println("No job cards found.");
-                return;
-            }
-            System.out.println("job card is found");
-            // Loop through each job card
-            for (WebElement jobCard : jobCards) {
-                try {
-                    // Extract job title
-                    WebElement titleElement;
-                    try {
-                        titleElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//h3[contains(@class, 'base-search-card__title')]"));
-                        System.out.println("job title is found");
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job title element not found in a job card.");
-                        continue; // Skip this job card if the title is missing
-                    }
-                    String title = titleElement.getText();
-
-                    // Extract job URL
-                    WebElement urlElement;
-                    try {
-                        //urlElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//a[contains(@class, 'base-card__full-link')]/@href\n"));
-                        urlElement = jobCard.findElement(By.cssSelector("a.base-card__full-link"));
-                        System.out.println("url is found");
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job URL element not found in a job card.");
-                        continue; // Skip this job card if the URL is missing
-                    }
-                    String url = urlElement.getAttribute("href");
-
-                    // Only add job details if the URL is not already in the map
-                    jobDetails.putIfAbsent(url, title);
-                } catch (NoSuchElementException e) {
-                    // Log error if elements are not found within a job card
-                    System.err.println("Error extracting details from job card: " + e.getMessage());
-                }
-            }
-        } catch (TimeoutException e) {
-            // Log error if the job container element is not found within the timeout period
-            System.err.println("Timeout while waiting for job container: " + e.getMessage());
-        } catch (Exception e) {
-            // Log any other unexpected errors
-            System.err.println("Unexpected error: " + e.getMessage());
-        }
-    }
-
-    private boolean isNoJobsFound(WebDriver driver) {
-        List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
-        return jobCards.isEmpty();
-    }
 }
