@@ -20,7 +20,7 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=Java&location=Israel&geoId=101620260&f_TPR=r86400&position=1&pageNum=0";
+    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r86400&position=1&pageNum=0";
     boolean morePages = true;
     Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
     WebDriver driver;
@@ -34,17 +34,15 @@ public class PositionFinderService {
 
     public void getResults() {
         Scrolling scroller = new Scrolling(driver, wait);
-
         try {
             openPage(driver);
-            // Start scrolling in a separate thread
-           scroller.start();
-           Thread.sleep(230000);
-           scroller.stop(); // Signal the scrolling thread to stop
+            scroller.start();
+            Thread.sleep(600000);
+            scroller.stop(); // Signal the scrolling thread to stop
             System.out.println("scrolling stoped");
             // Extract job details from the current page
             ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
-            System.out.println("jobs found " + jobDetails.size());
+
             // Write job details to Excel
             WriteToExcel.writeToExcel(jobDetails);
             System.out.println("jobs parsed " + jobDetails.size());

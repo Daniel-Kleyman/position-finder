@@ -6,17 +6,21 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Scrolling implements Runnable {
 
     private final WebDriver driver;
     private final WebDriverWait wait;
     private volatile boolean running = true; // Control flag for thread execution
+    Map<String, String> jobDetails;
 
     public Scrolling(WebDriver driver, WebDriverWait wait) {
         this.driver = driver;
         this.wait = wait;
+        this.jobDetails = new LinkedHashMap<>();
     }
 
     @Override
@@ -28,15 +32,12 @@ public class Scrolling implements Runnable {
 
         while (running) {
             // Get the initial height of the page
-            long previousHeight = (Long) js.executeScript("return document.body.scrollHeight;");
 
-            boolean scrolled = false;
 
             // Perform incremental scrolling and check for new content
             while (running) {
                 // Check if the "See more jobs" button is present and click it
                 List<WebElement> seeMoreButtons = driver.findElements(By.xpath("//button[contains(@class, 'infinite-scroller__show-more-button')]"));
-                List<WebElement> endMessages = driver.findElements(By.xpath("//p[contains(@class, 'inline-notification__text') and contains(text(), \"You've viewed all jobs for this search\")]"));
 
                 if (!seeMoreButtons.isEmpty()) {
                     WebElement seeMoreButton = seeMoreButtons.get(0);
@@ -53,14 +54,25 @@ public class Scrolling implements Runnable {
 
                 // Scroll down incrementally in steps
                 js.executeScript("window.scrollBy(0, arguments[0]);", stepSize);
-                scrolled = true;
-
-                // Wait for new content to load
+                js.executeScript("window.scrollBy(0, arguments[0]);", -stepSize/3);
                 try {
-                    Thread.sleep(3000); // Wait for 3 seconds between scrolls
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
+                js.executeScript("window.scrollBy(0, arguments[0]);", stepSize/3);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+       //         ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
+                // Wait for new content to load
+//                try {
+//                    Thread.sleep(3000); // Wait for 3 seconds between scrolls
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
             }
         }
     }

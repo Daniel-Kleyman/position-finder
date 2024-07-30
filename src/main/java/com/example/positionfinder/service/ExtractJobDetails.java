@@ -21,15 +21,15 @@ public class ExtractJobDetails {
     private static void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
         // Wait for a given period to allow the page to load
         System.out.println("Waiting for page to load...");
-        try {
-            Thread.sleep(1000); // Convert seconds to milliseconds
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            Thread.sleep(1000); // Convert seconds to milliseconds
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
         try {
             // Wait until the job container is visible /html/body/div[1]/div/main/section[2]
             WebElement jobContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//ul[contains(@class, 'jobs-search__results-list')]")));
-            System.out.println("container is found");
+       //     System.out.println("container is found");
             //   Find all job cards on the page
             List<WebElement> jobCards = driver.findElements(By.xpath("//div[contains(@class, 'job-search-card')]"));
             if (jobCards.isEmpty()) {
@@ -37,7 +37,7 @@ public class ExtractJobDetails {
                 System.err.println("No job cards found.");
                 return;
             }
-            System.out.println("job card is found");
+  //          System.out.println("job card is found");
             // Loop through each job card
             for (WebElement jobCard : jobCards) {
                 try {
@@ -45,7 +45,7 @@ public class ExtractJobDetails {
                     WebElement titleElement;
                     try {
                         titleElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//h3[contains(@class, 'base-search-card__title')]"));
-                        System.out.println("job title is found");
+       //                 System.out.println("job title is found");
                     } catch (NoSuchElementException e) {
                         System.err.println("Job title element not found in a job card.");
                         continue; // Skip this job card if the title is missing
@@ -57,7 +57,7 @@ public class ExtractJobDetails {
                     try {
                         //urlElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//a[contains(@class, 'base-card__full-link')]/@href\n"));
                         urlElement = jobCard.findElement(By.cssSelector("a.base-card__full-link"));
-                        System.out.println("url is found");
+         //               System.out.println("url is found");
                     } catch (NoSuchElementException e) {
                         System.err.println("Job URL element not found in a job card.");
                         continue; // Skip this job card if the URL is missing
@@ -78,6 +78,7 @@ public class ExtractJobDetails {
             // Log any other unexpected errors
             System.err.println("Unexpected error: " + e.getMessage());
         }
+        System.out.println("jobs found " + jobDetails.size());
     }
 
     private boolean isNoJobsFound(WebDriver driver) {
