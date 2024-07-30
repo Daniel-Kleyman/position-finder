@@ -39,7 +39,7 @@ public class PositionFinderService {
             openPage(driver);
             // Start scrolling in a separate thread
            scroller.start();
-           Thread.sleep(250000);
+           Thread.sleep(230000);
            scroller.stop(); // Signal the scrolling thread to stop
             System.out.println("scrolling stoped");
             // Extract job details from the current page

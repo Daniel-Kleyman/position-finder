@@ -22,7 +22,7 @@ public class ExtractJobDetails {
         // Wait for a given period to allow the page to load
         System.out.println("Waiting for page to load...");
         try {
-            Thread.sleep(10000); // Convert seconds to milliseconds
+            Thread.sleep(1000); // Convert seconds to milliseconds
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
