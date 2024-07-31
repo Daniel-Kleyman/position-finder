@@ -20,24 +20,28 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r86400&position=1&pageNum=0";
+    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r12600&position=1&pageNum=0";
+    //3.5 hours 12600
     boolean morePages = true;
     Map<String, String> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
     WebDriver driver;
     WebDriverWait wait;
-
+    static int jobCount;
     public PositionFinderService() {
         this.driver = initializeWebDriver();
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.jobCount = 0;
     }
 
 
     public void getResults() {
         Scrolling scroller = new Scrolling(driver, wait);
+
         try {
             openPage(driver);
+            printJobCount(driver);
             scroller.start();
-            Thread.sleep(600000);
+            Thread.sleep((long) (jobCount * 0.6 * 1000));
             scroller.stop(); // Signal the scrolling thread to stop
             System.out.println("scrolling stoped");
             // Extract job details from the current page
@@ -82,7 +86,8 @@ public class PositionFinderService {
             }
         }
         // Continue with further actions after the loop
-        System.out.println("Page is ready.");
+ //       System.out.println("Page is ready.");
+
     }
 
 
@@ -99,7 +104,26 @@ public class PositionFinderService {
 
         return driver;
     }
+    public static void printJobCount(WebDriver driver) {
+        // Locate the element containing the job count
+        WebElement jobCountElement = driver.findElement(By.cssSelector(".results-context-header__job-count"));
 
+        // Extract the text from the element
+        String jobCountText = jobCountElement.getText();
+
+        // Convert the text to an integer
+
+        try {
+            jobCount = Integer.parseInt(jobCountText);
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse job count: " + e.getMessage());
+            return;
+        }
+
+        // Print the job count
+        System.out.println("Job count: " + jobCount);
+
+    }
 
 //    private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
 //        driver.get(L_LOGIN_URL);
