@@ -1,5 +1,6 @@
 package com.example.positionfinder.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.*;
@@ -20,13 +21,14 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r600&position=1&pageNum=0";
+    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r86400&position=1&pageNum=0";
     //3.5 hours 12600
     boolean morePages = true;
     Map<String, List<String>> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
     WebDriver driver;
     WebDriverWait wait;
     static int jobCount;
+
     public PositionFinderService() {
         this.driver = initializeWebDriver();
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -36,7 +38,7 @@ public class PositionFinderService {
 
     public void getResults() {
         Scrolling scroller = new Scrolling(driver, wait);
-
+        int startTime = (int) System.currentTimeMillis();
         try {
             openPage(driver);
             printJobCount(driver);
@@ -46,9 +48,12 @@ public class PositionFinderService {
             System.out.println("scrolling stoped");
             // Extract job details from the current page
             ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
-
+  //          saveMapToJson(jobDetails);
+            int endTime = (int) System.currentTimeMillis();
+            int totalTime = (endTime - startTime)/1000;
+System.out.println("extrected completed in " + totalTime);
             // Write job details to Excel
-    //        WriteToExcel.writeToExcel(newJobDetails);
+            //        WriteToExcel.writeToExcel(newJobDetails);
             System.out.println("jobs parsed " + jobDetails.size());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -86,7 +91,7 @@ public class PositionFinderService {
             }
         }
         // Continue with further actions after the loop
- //       System.out.println("Page is ready.");
+        //       System.out.println("Page is ready.");
 
     }
 
@@ -104,6 +109,7 @@ public class PositionFinderService {
 
         return driver;
     }
+
     public static void printJobCount(WebDriver driver) {
         // Locate the element containing the job count
         WebElement jobCountElement = driver.findElement(By.cssSelector(".results-context-header__job-count"));
@@ -124,6 +130,31 @@ public class PositionFinderService {
         System.out.println("Job count: " + jobCount);
 
     }
+    // Save the Map to a JSON file
+    public static void saveMapToJson(Map<String, List<String>> jobDetails) {
+        String filePath = "C:\\Users\\Daniel\\IdeaProjects\\position-finder\\testJson.json";
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            mapper.writeValue(new File(filePath), jobDetails);
+            System.out.println("Map saved to JSON file: " + filePath);
+        } catch (IOException e) {
+            System.err.println("Error saving map to JSON file: " + e.getMessage());
+        }
+    }
+
+    // Load the Map from a JSON file
+    public static Map<String, List<String>> loadMapFromJson() {
+        String filePath = "C:\\Users\\Daniel\\IdeaProjects\\position-finder\\testJson.json";
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            Map<String, List<String>> jobDetailsTest = mapper.readValue(new File(filePath),
+                    mapper.getTypeFactory().constructMapType(Map.class, String.class, List.class));
+            System.out.println("Map loaded from JSON file: " + filePath);
+            return jobDetailsTest;
+        } catch (IOException e) {
+            System.err.println("Error loading map from JSON file: " + e.getMessage());
+            return null;
+        }
 
 //    private void loginToLinkedIn(WebDriver driver, WebDriverWait wait) {
 //        driver.get(L_LOGIN_URL);
@@ -137,5 +168,5 @@ public class PositionFinderService {
 //        signInButton.click();
 //    }
 
-
+    }
 }
