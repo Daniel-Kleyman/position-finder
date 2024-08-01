@@ -97,7 +97,7 @@ public class ExtractJobDetails {
                         WebElement cityElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("span.topcard__flavor.topcard__flavor--bullet")));
                         String city = cityElement.getText().trim();
                         details.add(city);
-      //                  System.out.println("City added: " + city);
+    //                    System.out.println("City added: " + city);
                     } catch (NoSuchElementException | TimeoutException e) {
                         System.err.println("City element not found: " + e.getMessage());
                         details.add("City not available");
@@ -109,7 +109,7 @@ public class ExtractJobDetails {
                         expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
                         String extendedText = expandedContent.getText();
                         details.add(extendedText);
-     //                  System.out.println("Extended text added: " + extendedText);
+    //                    System.out.println("Extended text added: " + extendedText);
                     } catch (TimeoutException e) {
                         System.err.println("Extended content not found within 1 second.");
                         details.add("Extended text not available");

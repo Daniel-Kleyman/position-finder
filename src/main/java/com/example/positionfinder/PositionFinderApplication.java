@@ -14,8 +14,8 @@ public class PositionFinderApplication {
     public static void main(String[] args) {
         SpringApplication.run(PositionFinderApplication.class, args);
         PositionFinderService positionFinderService = new PositionFinderService();
-       // positionFinderService.getResults();
-        PositionFinderService.loadMapFromJson();
+        positionFinderService.getResults();
+
 
     }
 }

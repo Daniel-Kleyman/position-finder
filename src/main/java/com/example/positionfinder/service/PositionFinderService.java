@@ -37,29 +37,31 @@ public class PositionFinderService {
 
 
     public void getResults() {
-        Scrolling scroller = new Scrolling(driver, wait);
-        int startTime = (int) System.currentTimeMillis();
-        try {
-            openPage(driver);
-            printJobCount(driver);
-            scroller.start();
-            Thread.sleep((long) (jobCount * 0.6 * 1000));
-            scroller.stop(); // Signal the scrolling thread to stop
-            System.out.println("scrolling stoped");
-            // Extract job details from the current page
-            ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
-  //          saveMapToJson(jobDetails);
-            int endTime = (int) System.currentTimeMillis();
-            int totalTime = (endTime - startTime)/1000;
-System.out.println("extrected completed in " + totalTime);
-            // Write job details to Excel
-            //        WriteToExcel.writeToExcel(newJobDetails);
-            System.out.println("jobs parsed " + jobDetails.size());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            //     driver.quit();
-        }
+        Map<String, List<String>> testJobDetails = loadMapFromJson();
+        WriteToExcel.writeToExcel(testJobDetails);
+//        Scrolling scroller = new Scrolling(driver, wait);
+//        int startTime = (int) System.currentTimeMillis();
+//        try {
+//            openPage(driver);
+//            printJobCount(driver);
+//            scroller.start();
+//            Thread.sleep((long) (jobCount * 0.6 * 1000));
+//            scroller.stop(); // Signal the scrolling thread to stop
+//            System.out.println("scrolling stoped");
+//            // Extract job details from the current page
+//            ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
+//            saveMapToJson(jobDetails);
+//            int endTime = (int) System.currentTimeMillis();
+//            int totalTime = (endTime - startTime)/1000;
+//System.out.println("extrected completed in " + totalTime);
+//            // Write job details to Excel
+//            //        WriteToExcel.writeToExcel(newJobDetails);
+//            System.out.println("jobs parsed " + jobDetails.size());
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        } finally {
+//            //     driver.quit();
+//        }
     }
 
     private void openPage(WebDriver driver) {
