@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class WriteToExcel {
     public static void writeToExcel(Map<String, List<String>> unfilteredJobDetails) {
-        saveUnfilteredMapToExcel(unfilteredJobDetails);
+  //      saveUnfilteredMapToExcel(unfilteredJobDetails);
         Map<String, List<String>> jobDetails = filterMap(unfilteredJobDetails);
         String filePath = "C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx";
         Workbook workbook;
@@ -201,7 +201,7 @@ public class WriteToExcel {
 
     private static Map<String, List<String>> filterMap(Map<String, List<String>> jobDetails) {
         Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager");
-        Set<String> includeKeywords = Set.of("developer", "engineer", "programmer");
+        Set<String> includeKeywords = Set.of("developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack", "software");
 
         return jobDetails.entrySet().stream()
                 .filter(entry -> {
@@ -224,25 +224,5 @@ public class WriteToExcel {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-
-//    private static Map<String, String> filterMap(Map<String, String> jobDetails) {
-//        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "engineering");
-//        Set<String> includeKeywords = Set.of("developer", "engineer");
-//        return jobDetails.entrySet().stream()
-//                // Convert the key to lower case for case-insensitive comparison
-//                .filter(entry -> {
-//                    String keyLowerCase = entry.getKey().toLowerCase();
-//                    // Exclude entries if the key contains any of the excludeKeywords
-//                    boolean shouldExclude = excludeKeywords.stream()
-//                            .anyMatch(keyword -> keyLowerCase.contains(keyword));
-//                    // Include only entries that contain at least one of the includeKeywords
-//                    boolean shouldInclude = includeKeywords.stream()
-//                            .anyMatch(keyword -> keyLowerCase.contains(keyword));
-//                    // Include the entry if it should be included and not excluded
-//                    return !shouldExclude && shouldInclude;
-//                })
-//                // Collect the results into a new map
-//                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-//    }
 }
 
