@@ -7,78 +7,125 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class ExtractJobDetails {
-    public static void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
+    public static void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, List<String>> jobDetails) {
 
-           extractProcess(driver, wait, jobDetails);
+        extractProcess(driver, wait, jobDetails);
 
     }
 
-    private static void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, String> jobDetails) {
-        // Wait for a given period to allow the page to load
+    private static void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, List<String>> jobDetails) {
         System.out.println("Waiting for page to load...");
-//        try {
-//            Thread.sleep(1000); // Convert seconds to milliseconds
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+
         try {
-            // Wait until the job container is visible /html/body/div[1]/div/main/section[2]
+            // Wait until the job container is visible
             WebElement jobContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//ul[contains(@class, 'jobs-search__results-list')]")));
-       //     System.out.println("container is found");
-            //   Find all job cards on the page
+
+            // Find all job cards on the page
             List<WebElement> jobCards = driver.findElements(By.xpath("//div[contains(@class, 'job-search-card')]"));
             if (jobCards.isEmpty()) {
-                // Log if no job cards are found
                 System.err.println("No job cards found.");
                 return;
             }
-  //          System.out.println("job card is found");
-            // Loop through each job card
-            for (WebElement jobCard : jobCards) {
+
+            for (int i = 0; i < jobCards.size(); i++) {
+                WebElement jobCard = jobCards.get(i);
+                String title = "";
+                String url = "";
+                List<String> details = new ArrayList<>();
                 try {
-                    // Extract job title
-                    WebElement titleElement;
+                    // Extract job title and URL
                     try {
-                        titleElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//h3[contains(@class, 'base-search-card__title')]"));
-       //                 System.out.println("job title is found");
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job title element not found in a job card.");
-                        continue; // Skip this job card if the title is missing
-                    }
-                    String title = titleElement.getText();
+                        WebElement titleElement = jobCard.findElement(By.xpath(".//h3[contains(@class, 'base-search-card__title')]"));
+                        title = titleElement.getText();
+                        details.add(title);
+                        System.out.println("Title added: " + title);
 
-                    // Extract job URL
-                    WebElement urlElement;
+                        WebElement urlElement = jobCard.findElement(By.cssSelector("a.base-card__full-link"));
+                        url = urlElement.getAttribute("href");
+
+                    } catch (NoSuchElementException e) {
+                        System.err.println("Job title or URL element not found in a job card.");
+                        continue; // Skip this job card if title or URL is missing
+                    }
+
+                    boolean showMoreVisible = false;
+                    while (!showMoreVisible) {
+                        // Click on the job card to expand it
+                        jobCard.click();
+                        try {
+                            // Try to find and click the "Show more" button
+                            WebElement showMoreButton = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("button.show-more-less-html__button")));
+                            showMoreButton.click();
+                            showMoreVisible = true; // Exit loop if the button was clicked
+                            System.out.println("Clicked 'Show more' button.");
+                        } catch (NoSuchElementException | TimeoutException e) {
+                            // If the "Show more" button is not found, collapse the previous job card if possible
+                            if (i > 0) {
+                                WebElement previousJobCard = jobCards.get(i - 1);
+                                previousJobCard.click(); // Collapse the previous job card
+                                System.out.println("Collapsed previous job card.");
+                            }
+                            // Retry the current job card by clicking it again
+                            jobCard.click();
+                        }
+                    }
+
+                    // Use a shorter wait for the expanded content
+                    WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(1));
+                    WebElement expandedContent = null;
                     try {
-                        //urlElement = jobCard.findElement(By.xpath("//div[contains(@class, 'job-search-card')]//a[contains(@class, 'base-card__full-link')]/@href\n"));
-                        urlElement = jobCard.findElement(By.cssSelector("a.base-card__full-link"));
-         //               System.out.println("url is found");
-                    } catch (NoSuchElementException e) {
-                        System.err.println("Job URL element not found in a job card.");
-                        continue; // Skip this job card if the URL is missing
+                        expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
+                        String extendedText = expandedContent.getText();
+                        details.add(extendedText);
+                        System.out.println("Extended text added: " + extendedText);
+                    } catch (TimeoutException e) {
+                        System.err.println("Extended content not found within 1 second.");
+                        details.add("Extended text not available");
                     }
-                    String url = urlElement.getAttribute("href");
 
-                    // Only add job details if the URL is not already in the map
-                    jobDetails.putIfAbsent(url, title);
-                } catch (NoSuchElementException e) {
-                    // Log error if elements are not found within a job card
-                    System.err.println("Error extracting details from job card: " + e.getMessage());
+                    // Extract company name
+                    try {
+                        WebElement companyElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("a.topcard__org-name-link")));
+                        String companyName = companyElement.getText();
+                        details.add(companyName);
+                        System.out.println("Company name added: " + companyName);
+                    } catch (NoSuchElementException | TimeoutException e) {
+                        System.err.println("Company name element not found: " + e.getMessage());
+                        details.add("Company name not available");
+                    }
+
+                    // Extract city
+                    try {
+                        WebElement cityElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("span.topcard__flavor.topcard__flavor--bullet")));
+                        String city = cityElement.getText().trim();
+                        details.add(city);
+                        System.out.println("City added: " + city);
+                    } catch (NoSuchElementException | TimeoutException e) {
+                        System.err.println("City element not found: " + e.getMessage());
+                        details.add("City not available");
+                    }
+
+                    // Add job details to the map
+                    jobDetails.putIfAbsent(url, details);
+                    System.out.println("Job details added to map for URL: " + url);
+
+                } catch (Exception e) {
+                    System.err.println("Unexpected error extracting details from job card: " + e.getMessage());
                 }
             }
         } catch (TimeoutException e) {
-            // Log error if the job container element is not found within the timeout period
             System.err.println("Timeout while waiting for job container: " + e.getMessage());
         } catch (Exception e) {
-            // Log any other unexpected errors
             System.err.println("Unexpected error: " + e.getMessage());
         }
-        System.out.println("jobs found " + jobDetails.size());
+        System.out.println("Jobs found: " + jobDetails.size());
     }
 
     private boolean isNoJobsFound(WebDriver driver) {
