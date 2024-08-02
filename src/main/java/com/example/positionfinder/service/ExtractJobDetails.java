@@ -47,6 +47,10 @@ public class ExtractJobDetails {
                     try {
                         WebElement titleElement = jobCard.findElement(By.xpath(".//h3[contains(@class, 'base-search-card__title')]"));
                         title = titleElement.getText();
+                        if (filterTitle(title)) {
+                            System.out.println("Job title excluded: " + title);
+                            continue; // Skip this job card if title matches filter criteria
+                        }
                         details.add(title);
                         //             System.out.println("Title added: " + title);
 
@@ -107,6 +111,10 @@ public class ExtractJobDetails {
                     try {
                         expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
                         String extendedText = expandedContent.getText();
+                        if (!filterDescription(extendedText)) {
+                            System.out.println("Extended text excluded.");
+                            continue; // Skip this job card if the extended text does not match filter criteria
+                        }
                         details.add(extendedText);
                         //                    System.out.println("Extended text added: " + extendedText);
                     } catch (TimeoutException e) {
@@ -114,10 +122,11 @@ public class ExtractJobDetails {
                         details.add("Extended text not available");
                     }
                     // Add job details to the map
-                    if (filterDetails(details)) {
-                        jobDetails.putIfAbsent(url, details);
-                        System.out.println("Job details added to map for URL: " + url);
-                    }
+                    jobDetails.putIfAbsent(url, details);
+//                    if (filterDetails(details)) {
+//                        jobDetails.putIfAbsent(url, details);
+//                        System.out.println("Job details added to map for URL: " + url);
+//                    }
 
                 } catch (Exception e) {
                     System.err.println("Unexpected error extracting details from job card: " + e.getMessage());
@@ -152,15 +161,15 @@ public class ExtractJobDetails {
         Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
                 "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
                 "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
-
+        String jobTitle1 = jobTitle.toLowerCase();
         return excludeKeywords.stream()
-                .anyMatch(keyword -> jobTitle.contains(keyword));
+                .anyMatch(keyword -> jobTitle1.contains(keyword));
 
     }
 
     private static boolean filterDescription(String aboutJob) {
-
-        return aboutJob.contains("java");
+        String aboutJob1 = aboutJob.toLowerCase();
+        return aboutJob1.contains("java");
 
     }
 }
