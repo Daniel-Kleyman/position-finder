@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -47,7 +48,7 @@ public class ExtractJobDetails {
                     try {
                         WebElement titleElement = jobCard.findElement(By.xpath(".//h3[contains(@class, 'base-search-card__title')]"));
                         title = titleElement.getText();
-                        if (filterTitle(title)) {
+                        if (!filterTitle(title.toLowerCase())) {
                             System.out.println("Job title excluded: " + title);
                             continue; // Skip this job card if title matches filter criteria
                         }
@@ -83,7 +84,22 @@ public class ExtractJobDetails {
                             jobCard.click();
                         }
                     }
-
+// Use a shorter wait for the expanded content
+                    WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(1));
+                    WebElement expandedContent = null;
+                    try {
+                        expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
+                        String extendedText = expandedContent.getText();
+                        if (!filterDescription(extendedText)) {
+                            System.out.println("Extended text excluded.");
+                            continue; // Skip this job card if the extended text does not match filter criteria
+                        }
+                        details.add(extendedText);
+                        //                    System.out.println("Extended text added: " + extendedText);
+                    } catch (TimeoutException e) {
+                        System.err.println("Extended content not found within 1 second.");
+                        details.add("Extended text not available");
+                    }
                     // Extract company name
                     try {
                         WebElement companyElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("a.topcard__org-name-link")));
@@ -105,22 +121,7 @@ public class ExtractJobDetails {
                         System.err.println("City element not found: " + e.getMessage());
                         details.add("City not available");
                     }
-// Use a shorter wait for the expanded content
-                    WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(1));
-                    WebElement expandedContent = null;
-                    try {
-                        expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
-                        String extendedText = expandedContent.getText();
-                        if (!filterDescription(extendedText)) {
-                            System.out.println("Extended text excluded.");
-                            continue; // Skip this job card if the extended text does not match filter criteria
-                        }
-                        details.add(extendedText);
-                        //                    System.out.println("Extended text added: " + extendedText);
-                    } catch (TimeoutException e) {
-                        System.err.println("Extended content not found within 1 second.");
-                        details.add("Extended text not available");
-                    }
+
                     // Add job details to the map
                     jobDetails.putIfAbsent(url, details);
 //                    if (filterDetails(details)) {
@@ -158,14 +159,29 @@ public class ExtractJobDetails {
     }
 
     private static boolean filterTitle(String jobTitle) {
-        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
-                "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
-                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
-        String jobTitle1 = jobTitle.toLowerCase();
-        return excludeKeywords.stream()
-                .anyMatch(keyword -> jobTitle1.contains(keyword));
+        Set<String> excludeKeywords = Set.of(
+                "senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
+                "principal", "customer", "embedded", "system", "verification", "electrical", "support", "complaint", "solution", "solutions",
+                "simulation", "technical", "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine learning",
+                "design", "sr.", "quality"
+        );
+        Set<String> includeKeywords = Set.of(
+                "developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack",
+                "software", "fs", "java"
+        );
 
+        // Check if any exclude keyword is present in the job title
+        boolean shouldExclude = excludeKeywords.stream()
+                .anyMatch(keyword -> jobTitle.contains(keyword));
+
+        // Check if any include keyword is present in the job title
+        boolean shouldInclude = includeKeywords.stream()
+                .anyMatch(keyword -> jobTitle.contains(keyword));
+
+        return !shouldExclude && shouldInclude;
     }
+
+
 
     private static boolean filterDescription(String aboutJob) {
         String aboutJob1 = aboutJob.toLowerCase();

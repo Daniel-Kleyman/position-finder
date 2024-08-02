@@ -79,15 +79,15 @@ public class WriteToExcel {
                 row.createCell(1).setCellValue(getCurrentDate());
                 row.createCell(2).setCellValue("Linkedin");
                 row.createCell(3).setCellValue(details.get(0)); // Title
-                row.createCell(4).setCellValue(details.get(1)); // Company
-                row.createCell(5).setCellValue(details.get(2)); // City
+                row.createCell(4).setCellValue(details.get(2)); // Company
+                row.createCell(5).setCellValue(details.get(3)); // City
                 // Create hyperlink for the URL from entry.getValue()
                 Cell linkCell = row.createCell(6);
                 Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
                 hyperlink.setAddress(url);
                 linkCell.setHyperlink(hyperlink);
                 linkCell.setCellValue(url);
-                row.createCell(7).setCellValue(details.get(3)); // Description
+                row.createCell(7).setCellValue(details.get(1)); // Description
                 row.createCell(8).setCellValue(" ");
             } else {
                 System.err.println("Insufficient data for URL: " + url);
