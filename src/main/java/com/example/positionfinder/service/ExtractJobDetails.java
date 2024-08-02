@@ -134,7 +134,7 @@ public class ExtractJobDetails {
     private static boolean filterDetails(List<String> details) {
         Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
                 "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
-                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
+                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality", "architect");
         // Convert the job title to lower case for case-insensitive comparison
         String jobTitle = details.get(0).toLowerCase();
         String aboutJob = details.get(3).toLowerCase();
@@ -148,4 +148,19 @@ public class ExtractJobDetails {
         return !shouldExclude && shouldAlsoInclude;
     }
 
+    private static boolean filterTitle(String jobTitle) {
+        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
+                "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
+                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
+
+        return excludeKeywords.stream()
+                .anyMatch(keyword -> jobTitle.contains(keyword));
+
+    }
+
+    private static boolean filterDescription(String aboutJob) {
+
+        return aboutJob.contains("java");
+
+    }
 }

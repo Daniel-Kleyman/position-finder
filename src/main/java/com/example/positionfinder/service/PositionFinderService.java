@@ -20,7 +20,7 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r3600&position=1&pageNum=0";
+    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r7200&position=1&pageNum=0";
     //3.5 hours 12600
     boolean morePages = true;
     Map<String, List<String>> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
