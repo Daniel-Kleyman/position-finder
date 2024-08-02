@@ -1,8 +1,7 @@
 package com.example.positionfinder.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -21,7 +20,7 @@ public class PositionFinderService {
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
     private static final List<String> KEYWORDS = List.of(" ");
-    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r32400&position=1&pageNum=0";
+    private String firstUrl = "https://www.linkedin.com/jobs/search?keywords=&location=Israel&geoId=101620260&f_TPR=r3600&position=1&pageNum=0";
     //3.5 hours 12600
     boolean morePages = true;
     Map<String, List<String>> jobDetails = new LinkedHashMap<>(); // Use LinkedHashMap to maintain insertion order
@@ -37,33 +36,32 @@ public class PositionFinderService {
 
 
     public void getResults() {
-    //    saveMapToJson(jobDetails);
-         Map<String, List<String>> testJobDetails = loadMapFromJson();
-       WriteToExcel.writeToExcel(testJobDetails);
-//        Scrolling scroller = new Scrolling(driver, wait);
-//        int startTime = (int) System.currentTimeMillis();
-//        try {
-//            openPage(driver);
-//            printJobCount(driver);
-//            scroller.start();
-//            Thread.sleep((long) (jobCount * 0.6 * 1000));
-//            scroller.stop(); // Signal the scrolling thread to stop
-//            System.out.println("scrolling stoped");
-//            // Extract job details from the current page
-//            ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
-//            WriteToExcel.writeToExcel(jobDetails);
-//            //     saveMapToJson(jobDetails);
-//            int endTime = (int) System.currentTimeMillis();
-//            int totalTime = (endTime - startTime) / 1000;
-//            System.out.println("extrected completed in " + totalTime);
-//            // Write job details to Excel
-//            //        WriteToExcel.writeToExcel(newJobDetails);
-//            System.out.println("jobs parsed " + jobDetails.size());
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        } finally {
-//            //     driver.quit();
-//        }
+        //    Map<String, List<String>> testJobDetails = loadMapFromJson();
+        //   WriteToExcel.writeToExcel(testJobDetails);
+        Scrolling scroller = new Scrolling(driver, wait);
+        int startTime = (int) System.currentTimeMillis();
+        try {
+            openPage(driver);
+            printJobCount(driver);
+            scroller.start();
+            Thread.sleep((long) (jobCount * 0.6 * 1000));
+            scroller.stop(); // Signal the scrolling thread to stop
+            System.out.println("scrolling stoped");
+            // Extract job details from the current page
+            ExtractJobDetails.extractJobDetails(driver, wait, jobDetails);
+            //        saveMapToJson(jobDetails);
+            WriteToExcel.writeToExcel(jobDetails);
+            int endTime = (int) System.currentTimeMillis();
+            int totalTime = (endTime - startTime) / 1000;
+            System.out.println("extract completed in " + totalTime);
+            // Write job details to Excel
+            //        WriteToExcel.writeToExcel(newJobDetails);
+            System.out.println("jobs parsed " + jobDetails.size());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            driver.quit();
+        }
     }
 
     private void openPage(WebDriver driver) {

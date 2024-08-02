@@ -10,10 +10,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,6 +23,7 @@ public class ExtractJobDetails {
 
     private static void extractProcess(WebDriver driver, WebDriverWait wait, Map<String, List<String>> jobDetails) {
         System.out.println("Waiting for page to load...");
+        int jobsVisibleOnPage = 0;
 
         try {
             // Wait until the job container is visible
@@ -39,6 +37,7 @@ public class ExtractJobDetails {
             }
 
             for (int i = 0; i < jobCards.size(); i++) {
+                jobsVisibleOnPage++;
                 WebElement jobCard = jobCards.get(i);
                 String title = "";
                 String url = "";
@@ -49,7 +48,7 @@ public class ExtractJobDetails {
                         WebElement titleElement = jobCard.findElement(By.xpath(".//h3[contains(@class, 'base-search-card__title')]"));
                         title = titleElement.getText();
                         details.add(title);
-           //             System.out.println("Title added: " + title);
+                        //             System.out.println("Title added: " + title);
 
                         WebElement urlElement = jobCard.findElement(By.cssSelector("a.base-card__full-link"));
                         url = urlElement.getAttribute("href");
@@ -86,7 +85,7 @@ public class ExtractJobDetails {
                         WebElement companyElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("a.topcard__org-name-link")));
                         String companyName = companyElement.getText();
                         details.add(companyName);
-        //                System.out.println("Company name added: " + companyName);
+                        //                System.out.println("Company name added: " + companyName);
                     } catch (NoSuchElementException | TimeoutException e) {
                         System.err.println("Company name element not found: " + e.getMessage());
                         details.add("Company name not available");
@@ -97,7 +96,7 @@ public class ExtractJobDetails {
                         WebElement cityElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("span.topcard__flavor.topcard__flavor--bullet")));
                         String city = cityElement.getText().trim();
                         details.add(city);
-    //                    System.out.println("City added: " + city);
+                        //                    System.out.println("City added: " + city);
                     } catch (NoSuchElementException | TimeoutException e) {
                         System.err.println("City element not found: " + e.getMessage());
                         details.add("City not available");
@@ -109,14 +108,16 @@ public class ExtractJobDetails {
                         expandedContent = shortWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.show-more-less-html__markup")));
                         String extendedText = expandedContent.getText();
                         details.add(extendedText);
-    //                    System.out.println("Extended text added: " + extendedText);
+                        //                    System.out.println("Extended text added: " + extendedText);
                     } catch (TimeoutException e) {
                         System.err.println("Extended content not found within 1 second.");
                         details.add("Extended text not available");
                     }
                     // Add job details to the map
-                    jobDetails.putIfAbsent(url, details);
-                    System.out.println("Job details added to map for URL: " + url);
+                    if (filterDetails(details)) {
+                        jobDetails.putIfAbsent(url, details);
+                        System.out.println("Job details added to map for URL: " + url);
+                    }
 
                 } catch (Exception e) {
                     System.err.println("Unexpected error extracting details from job card: " + e.getMessage());
@@ -127,12 +128,24 @@ public class ExtractJobDetails {
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
         }
-        System.out.println("Jobs found: " + jobDetails.size());
+        System.out.println("Jobs visible: " + jobsVisibleOnPage);
     }
 
-    private boolean isNoJobsFound(WebDriver driver) {
-        List<WebElement> jobCards = driver.findElements(By.xpath("//div[@data-job-id]"));
-        return jobCards.isEmpty();
+    private static boolean filterDetails(List<String> details) {
+        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
+                "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
+                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
+        // Convert the job title to lower case for case-insensitive comparison
+        String jobTitle = details.get(0).toLowerCase();
+        String aboutJob = details.get(3).toLowerCase();
+        // Exclude entries if the job title contains any of the excludeKeywords
+        boolean shouldExclude = excludeKeywords.stream()
+                .anyMatch(keyword -> jobTitle.contains(keyword));
+        // Include only entries that contain at least one of the includeKeywords
+
+        boolean shouldAlsoInclude = aboutJob.contains("java");
+
+        return !shouldExclude && shouldAlsoInclude;
     }
 
 }

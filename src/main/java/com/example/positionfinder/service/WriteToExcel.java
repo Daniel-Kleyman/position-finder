@@ -23,9 +23,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class WriteToExcel {
-    public static void writeToExcel(Map<String, List<String>> unfilteredJobDetails) {
+    public static void writeToExcel(Map<String, List<String>> jobDetails) {
   //      saveUnfilteredMapToExcel(unfilteredJobDetails);
-        Map<String, List<String>> jobDetails = filterMap(unfilteredJobDetails);
+   //     Map<String, List<String>> jobDetails = filterMap(unfilteredJobDetails);
         String filePath = "C:\\Users\\Daniel\\Desktop\\CV\\Positions.xlsx";
         Workbook workbook;
         Sheet sheet;
