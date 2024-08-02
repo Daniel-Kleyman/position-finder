@@ -167,7 +167,7 @@ public class ExtractJobDetails {
         );
         Set<String> includeKeywords = Set.of(
                 "developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack",
-                "software", "fs", "java"
+                "software", "fs", "java", "מתחנת", "מפתח"
         );
 
         // Check if any exclude keyword is present in the job title
@@ -185,7 +185,12 @@ public class ExtractJobDetails {
 
     private static boolean filterDescription(String aboutJob) {
         String aboutJob1 = aboutJob.toLowerCase();
-        return aboutJob1.contains("java");
+        Set<String> includeKeywords = Set.of("java", "spring", "microservice"
+        );
+        boolean shouldInclude = includeKeywords.stream()
+                .anyMatch(keyword -> aboutJob.contains(keyword));
+
+        return shouldInclude;
 
     }
 }
