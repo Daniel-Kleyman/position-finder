@@ -200,8 +200,11 @@ public class WriteToExcel {
     }
 
     private static Map<String, List<String>> filterMap(Map<String, List<String>> jobDetails) {
-        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager");
-        Set<String> includeKeywords = Set.of("developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack", "software");
+        Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
+                "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
+        "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality");
+        Set<String> includeKeywords = Set.of("developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack", "software", "fs"
+                , "java");
 
         return jobDetails.entrySet().stream()
                 .filter(entry -> {
@@ -209,14 +212,18 @@ public class WriteToExcel {
                     if (details.size() > 0) {
                         // Convert the job title to lower case for case-insensitive comparison
                         String jobTitle = details.get(0).toLowerCase();
+                        String aboutJob = details.get(3).toLowerCase();
                         // Exclude entries if the job title contains any of the excludeKeywords
                         boolean shouldExclude = excludeKeywords.stream()
                                 .anyMatch(keyword -> jobTitle.contains(keyword));
                         // Include only entries that contain at least one of the includeKeywords
                         boolean shouldInclude = includeKeywords.stream()
                                 .anyMatch(keyword -> jobTitle.contains(keyword));
+                        boolean shouldAlsoInclude = includeKeywords.stream()
+                                .anyMatch(keyword -> aboutJob.contains("java"));
                         // Include the entry if it should be included and not excluded
-                        return !shouldExclude && shouldInclude;
+//                        return !shouldExclude && shouldInclude&&shouldAlsoInclude;
+                        return !shouldExclude && shouldAlsoInclude;
                     }
                     // If there are no details or the details list is empty, exclude the entry
                     return false;
