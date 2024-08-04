@@ -7,12 +7,15 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.NoSuchElementException;
 
+@Service
 public class PositionFinderService {
 
     private static final String CHROME_DRIVER_PATH = System.getenv("CHROME_DRIVER_PATH");
@@ -63,7 +66,10 @@ public class PositionFinderService {
             driver.quit();
         }
     }
-
+    @Scheduled(fixedRate = 3600000) // 3600000 milliseconds = 1 hour
+    public void scheduledGetResults() {
+        getResults();
+    }
     private void openPage(WebDriver driver) {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         WebElement signInButton = null;
@@ -174,4 +180,5 @@ public class PositionFinderService {
 //    }
 
     }
+
 }
