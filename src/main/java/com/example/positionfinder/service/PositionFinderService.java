@@ -21,8 +21,8 @@ import java.util.logging.Logger;
 @Service
 public class PositionFinderService {
 
-    private static final Logger LOGGER = Logger.getLogger(PositionFinderService.class.getName());
-    private static final String CHROME_DRIVER_PATH = System.getenv("CHROME_DRIVER_PATH");
+    public static final Logger LOGGER = Logger.getLogger(PositionFinderService.class.getName());
+    public static final String CHROME_DRIVER_PATH = System.getenv("CHROME_DRIVER_PATH");
     private static final String L_LOGIN_URL = System.getenv("L_LOGIN_URL");
     private static final String USERNAME = System.getenv("L_USERNAME");
     private static final String PASSWORD = System.getenv("L_PASSWORD");
