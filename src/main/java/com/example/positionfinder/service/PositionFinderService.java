@@ -40,7 +40,7 @@ public class PositionFinderService {
         this.jobCount = 0;
     }
 
-    @Scheduled(cron = "0 0/3 * * * *") // Runs every 5 minutes
+    @Scheduled(cron = "0 0 * * * *") // Runs at the start of every hour
     public void scheduledGetResults() {
         try {
             getResults();

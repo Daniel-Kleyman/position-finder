@@ -144,7 +144,7 @@ public class ExtractJobDetails {
     private static boolean filterDetails(List<String> details) {
         Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
                 "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
-                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality", "architect");
+                "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality", "architect", "head");
         // Convert the job title to lower case for case-insensitive comparison
         String jobTitle = details.get(0).toLowerCase();
         String aboutJob = details.get(3).toLowerCase();
