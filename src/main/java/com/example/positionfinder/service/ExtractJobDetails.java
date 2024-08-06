@@ -163,7 +163,7 @@ public class ExtractJobDetails {
                 "senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
                 "principal", "customer", "embedded", "system", "verification", "electrical", "support", "complaint", "solution", "solutions",
                 "simulation", "technical", "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine learning",
-                "design", "sr.", "quality"
+                "design", "sr", "quality", "staff", "compliance"
         );
         Set<String> includeKeywords = Set.of(
                 "developer", "engineer", "programmer", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack",
@@ -175,20 +175,24 @@ public class ExtractJobDetails {
                 .anyMatch(keyword -> jobTitle.contains(keyword));
 
         // Check if any include keyword is present in the job title
+//        boolean shouldInclude = includeKeywords.stream()
+//                .anyMatch(keyword -> jobTitle.contains(keyword));
+// Check if any include keyword is present in the job title
         boolean shouldInclude = includeKeywords.stream()
-                .anyMatch(keyword -> jobTitle.contains(keyword));
-
-        return !shouldExclude && shouldInclude;
+                .anyMatch(keyword -> jobTitle.toLowerCase().contains(keyword.toLowerCase()));
+     //   return !shouldExclude && shouldInclude;
+        return !shouldExclude;
     }
 
 
 
     private static boolean filterDescription(String aboutJob) {
         String aboutJob1 = aboutJob.toLowerCase();
-        Set<String> includeKeywords = Set.of("java", "spring", "microservice"
+        Set<String> includeKeywords = Set.of("java", "spring", "microservice", "react", "javascript", "oop",
+                "typescript", "backend", "back-end", "back end", "fullstack", "full-stack", "full stack"
         );
         boolean shouldInclude = includeKeywords.stream()
-                .anyMatch(keyword -> aboutJob.contains(keyword));
+                .anyMatch(keyword -> aboutJob1.contains(keyword));
 
         return shouldInclude;
 
