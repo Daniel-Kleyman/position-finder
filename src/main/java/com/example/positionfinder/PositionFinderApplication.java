@@ -22,6 +22,6 @@ public class PositionFinderApplication {
         PositionFinderService positionFinderService = context.getBean(PositionFinderService.class);
 
         // Optionally call getResults() if needed
-        positionFinderService.getResults();
+       // positionFinderService.getResults();
     }
 }

@@ -40,7 +40,8 @@ public class PositionFinderService {
         this.jobCount = 0;
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Runs at the start of every hour
+    // @Scheduled(cron = "0 0 * * * *") // Runs at the start of every hour
+    @Scheduled(fixedRate = 3600000)
     public void scheduledGetResults() {
         try {
             getResults();
@@ -80,16 +81,20 @@ public class PositionFinderService {
     }
 
     private void openPage() {
-        while (true) {
+        boolean reload = true;
+        while (reload) {
             driver.get(firstUrl);
             try {
                 WebElement signInButton = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//a[contains(@class, 'sign-in-form__sign-in-cta') and contains(text(), 'Sign in with email')]")));
+                        By.cssSelector(".results-context-header__job-count")));
+                if (signInButton != null) {
+                    LOGGER.info("proceeding");
+                    reload = false;
+                }
 
-                LOGGER.info("Sign-In button found. Reloading the page...");
             } catch (TimeoutException e) {
-                LOGGER.info("Sign-In button not found. Proceeding...");
-                break;
+                LOGGER.info("reloading page");
+
             }
             try {
                 Thread.sleep(2000);
