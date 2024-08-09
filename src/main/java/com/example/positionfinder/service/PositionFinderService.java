@@ -94,7 +94,6 @@ public class PositionFinderService {
 
             } catch (TimeoutException e) {
                 LOGGER.info("reloading page");
-
             }
             try {
                 Thread.sleep(2000);
