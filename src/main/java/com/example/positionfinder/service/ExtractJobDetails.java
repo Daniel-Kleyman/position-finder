@@ -7,13 +7,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ExtractJobDetails {
     public static void extractJobDetails(WebDriver driver, WebDriverWait wait, Map<String, List<String>> jobDetails) {
@@ -145,7 +140,8 @@ public class ExtractJobDetails {
         Set<String> excludeKeywords = Set.of("senior", "lead", "leader", "devops", "manager", "qa", "mechanical", "infrastructure", "integration", "civil",
                 "principal", "customer", "embedded", "system", " verification", "electrical", "support", "complaint", "solution", "solutions", "simulation", "technical",
                 "manufacturing", "validation", "finops", "hardware", "devsecops", "motion", "machine Learning", "design", "sr.", "quality", "architect", "head",
-                "director", "president", "executive", "detection", "industrial", "chief");
+                "director", "president", "executive", "detection", "industrial", "chief", "specialist", "algorithm", "architecture", "admin", " researcher",
+                " data science", "webmaster", "medical", "associate", "mrb", "accountant", "waiter", "dft", "test");
         // Convert the job title to lower case for case-insensitive comparison
         String jobTitle = details.get(0).toLowerCase();
         String aboutJob = details.get(3).toLowerCase();
@@ -181,10 +177,9 @@ public class ExtractJobDetails {
 // Check if any include keyword is present in the job title
         boolean shouldInclude = includeKeywords.stream()
                 .anyMatch(keyword -> jobTitle.toLowerCase().contains(keyword.toLowerCase()));
-     //   return !shouldExclude && shouldInclude;
+        //   return !shouldExclude && shouldInclude;
         return !shouldExclude;
     }
-
 
 
     private static boolean filterDescription(String aboutJob) {
